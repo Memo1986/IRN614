@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2018-10-28" />
+<meta name="date" content="2022-06-05" />
 
 <title>Medidas Repetidas para datos de Precipitación</title>
 
@@ -246,29 +246,44 @@ div.tocify {
 <address class="author_afil">
 Alumno<br><h4 class="author">Ernesto Peredo Rivera</h4>
 <address class="author_afil">
-Docente<br><h4 class="date">2018-10-28</h4>
+Docente<br><h4 class="date">2022-06-05</h4>
 
 </div>
 
 
-<div id="r-markdown" class="section level2" number="0.1">
-<h2 number="0.1"><span class="header-section-number">0.1</span> R Markdown</h2>
-<p>This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <a href="http://rmarkdown.rstudio.com" class="uri">http://rmarkdown.rstudio.com</a>.</p>
-<p>When you click the <strong>Knit</strong> button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:</p>
-<pre class="r"><code>summary(cars)</code></pre>
-<pre><code>##      speed           dist       
-##  Min.   : 4.0   Min.   :  2.00  
-##  1st Qu.:12.0   1st Qu.: 26.00  
-##  Median :15.0   Median : 36.00  
-##  Mean   :15.4   Mean   : 42.98  
-##  3rd Qu.:19.0   3rd Qu.: 56.00  
-##  Max.   :25.0   Max.   :120.00</code></pre>
+<div id="medidas-repetidas" class="section level1" number="1">
+<h1 number="1"><span class="header-section-number">1</span> Medidas Repetidas</h1>
+<p>El procedimiento ANOVA de medidas repetidas analiza grupos de variables dependientes relacionadas que representan diferentes mediciones del mismo atributo. Tenga en cuenta que el orden en el que se especifiquen los factores intra-sujetos es importante. Cada factor constituye un nivel dentro del factor precedente. En un diseño doblemente multivariante de medidas repetidas, las variables dependientes representan mediciones de más de una variable para los diferentes niveles de los factores intra-sujetos. Por ejemplo, se pueden haber medido el pulso y la respiración de cada sujeto en tres momentos diferentes (<a href="https://www.ibm.com/docs/es/spss-statistics/beta?topic=statistics-repeated-measures-anova">ANOVA de medidas repetidas</a>).</p>
+<div id="instalar-las-librerías-necesarias" class="section level2" number="1.1">
+<h2 number="1.1"><span class="header-section-number">1.1</span> Instalar las librerías necesarias</h2>
+<p>Como primer paso se vana a instalar todas las librerías necesarias para este trabaja, para esto vamos a empler la función de <code>library()</code></p>
+<pre class="r"><code>library(tseries);
+library(astsa);
+library(forecast);
+library(tidyverse);
+library(lubridate);
+library(foreign);
+library(quantmod);
+library(sqldf)
+library(compare);
+library(readtext);
+library(datos);
+library(openxlsx) 
+#install.packages(&quot;gganimate&quot;)
+library(gganimate)
+library(dplyr);
+# install.packages(&quot;memisc&quot;)
+library(memisc);
+#install.packages(&quot;gifski&quot;)
+library(gifski)
+library(ggplot2);
+library(ggpubr);
+library(Metrics);
+library(RUnit);
+library(corrplot)</code></pre>
+<p>Leer los datos de entrada, esto mendiante la función de <code>read.csv()</code></p>
+<pre class="r"><code>pcp &lt;- read.csv(&quot;Bases_Datos/Precipitacion.csv&quot;)</code></pre>
 </div>
-<div id="including-plots" class="section level2" number="0.2">
-<h2 number="0.2"><span class="header-section-number">0.2</span> Including Plots</h2>
-<p>You can also embed plots, for example:</p>
-<p><img src="MR_IRN614_files/figure-html/pressure-1.png" width="672" /></p>
-<p>Note that the <code>echo = FALSE</code> parameter was added to the code chunk to prevent printing of the R code that generated the plot.</p>
 </div>
 
 

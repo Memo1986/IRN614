@@ -6,7 +6,7 @@ author:
   affiliation: "Alumno"
 - name: "Ernesto Peredo Rivera"
   affiliation: "Docente"
-date: "2018-10-28"
+date: "`r Sys.Date()`"
 output:
   html_document:
     toc: yes                  # incluir tabla de contenido
@@ -20,32 +20,54 @@ output:
     toc: yes
     toc_depth: 2
     keep_tex: yes             # conservar fichero latex
-  # bibliography:
-# - book.bib
-# - packages.bib
-
+csl: apa.csl
+bibliography: bibliografia.bib
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# Medidas Repetidas
+
+
+
+El procedimiento ANOVA de medidas repetidas analiza grupos de variables dependientes relacionadas que representan diferentes mediciones del mismo atributo. Tenga en cuenta que el orden en el que se especifiquen los factores intra-sujetos es importante. Cada factor constituye un nivel dentro del factor precedente. En un diseño doblemente multivariante de medidas repetidas, las variables dependientes representan mediciones de más de una variable para los diferentes niveles de los factores intra-sujetos. Por ejemplo, se pueden haber medido el pulso y la respiración de cada sujeto en tres momentos diferentes ([ANOVA de medidas repetidas](https://www.ibm.com/docs/es/spss-statistics/beta?topic=statistics-repeated-measures-anova)). 
+
+
+
+## Instalar las librerías necesarias
+
+Como primer paso se vana a instalar todas las librerías necesarias para este trabaja, para esto vamos a empler la función de `library()`
+```{r, warning=FALSE, message = FALSE}
+library(tseries);
+library(astsa);
+library(forecast);
+library(tidyverse);
+library(lubridate);
+library(foreign);
+library(quantmod);
+library(sqldf)
+library(compare);
+library(readtext);
+library(datos);
+library(openxlsx) 
+#install.packages("gganimate")
+library(gganimate)
+library(dplyr);
+# install.packages("memisc")
+library(memisc);
+#install.packages("gifski")
+library(gifski)
+library(ggplot2);
+library(ggpubr);
+library(Metrics);
+library(RUnit);
+library(corrplot)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+
+Leer los datos de entrada, esto mendiante la función de `read.csv()`
+```{r}
+pcp <- read.csv("Bases_Datos/Precipitacion.csv")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
