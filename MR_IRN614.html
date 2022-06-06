@@ -256,7 +256,7 @@ Docente<br><h4 class="date">2022-06-05</h4>
 <p>El procedimiento ANOVA de medidas repetidas analiza grupos de variables dependientes relacionadas que representan diferentes mediciones del mismo atributo. Tenga en cuenta que el orden en el que se especifiquen los factores intra-sujetos es importante. Cada factor constituye un nivel dentro del factor precedente. En un diseño doblemente multivariante de medidas repetidas, las variables dependientes representan mediciones de más de una variable para los diferentes niveles de los factores intra-sujetos. Por ejemplo, se pueden haber medido el pulso y la respiración de cada sujeto en tres momentos diferentes (<a href="https://www.ibm.com/docs/es/spss-statistics/beta?topic=statistics-repeated-measures-anova">ANOVA de medidas repetidas</a>).</p>
 <div id="instalar-las-librerías-necesarias" class="section level2" number="1.1">
 <h2 number="1.1"><span class="header-section-number">1.1</span> Instalar las librerías necesarias</h2>
-<p>Como primer paso se vana a instalar todas las librerías necesarias para este trabaja, para esto vamos a empler la función de <code>library()</code></p>
+<p>Como primer paso se van a instalar todas las librerías necesarias para este trabajo, para esto vamos a emplear la función de <code>library()</code></p>
 <pre class="r"><code>library(tseries);
 library(astsa);
 library(forecast);
@@ -280,10 +280,217 @@ library(ggplot2);
 library(ggpubr);
 library(Metrics);
 library(RUnit);
-library(corrplot)</code></pre>
-<p>Leer los datos de entrada, esto mendiante la función de <code>read.csv()</code></p>
-<pre class="r"><code>pcp &lt;- read.csv(&quot;Bases_Datos/Precipitacion.csv&quot;)</code></pre>
+library(corrplot);
+library(DT)
+library(kableExtra)
+library(nortest)
+library(ggridges)</code></pre>
 </div>
+<div id="importar-los-datos" class="section level2" number="1.2">
+<h2 number="1.2"><span class="header-section-number">1.2</span> Importar los datos</h2>
+<p>Leer los datos de entrada, esto mediante la función de <code>read.csv()</code>, y guardarlos en la varible de <strong>pcp</strong></p>
+<pre class="r"><code>pcp &lt;- read.csv(&quot;Bases_Datos/Precipitacion.csv&quot;)</code></pre>
+<p>Revisar el tipo de variable que es <strong>pcp</strong>, mediante la función de <code>class()</code></p>
+<pre class="r"><code>class(pcp);</code></pre>
+<pre><code>## [1] &quot;data.frame&quot;</code></pre>
+<p>Como se puede observar la variable de <strong>pcp</strong> es un <em>data frame</em>.Revisar el tamaño del <em>data frame</em>, con la función <code>dim()</code></p>
+<pre class="r"><code>dim(pcp);</code></pre>
+<pre><code>## [1] 62090    12</code></pre>
+<p>Se puede observar este <em>data frame</em> cuenta con <strong>62,090</strong> observaciones y <strong>12</strong> variables, las cuales tienen los siguientes nombres</p>
+<pre class="r"><code>names(pcp);</code></pre>
+<pre><code>##  [1] &quot;Id&quot;           &quot;Fecha&quot;        &quot;Dia&quot;          &quot;Mes&quot;          &quot;Year&quot;        
+##  [6] &quot;Estacion&quot;     &quot;lon&quot;          &quot;lat&quot;          &quot;Elevacion&quot;    &quot;Clima&quot;       
+## [11] &quot;Pcp_Estacion&quot; &quot;Pcp_Chirps&quot;</code></pre>
+<p>A su vez cada variable o columna cuenta con un tipo de formato distinto el cual podemos revisar mediante el comando de <code>str()</code></p>
+<pre class="r"><code>str(pcp);</code></pre>
+<pre><code>## &#39;data.frame&#39;:    62090 obs. of  12 variables:
+##  $ Id          : int  1 2 3 4 5 6 7 8 9 10 ...
+##  $ Fecha       : chr  &quot;1/1/1982&quot; &quot;1/2/1982&quot; &quot;1/3/1982&quot; &quot;1/4/1982&quot; ...
+##  $ Dia         : int  1 2 3 4 5 6 7 8 9 10 ...
+##  $ Mes         : int  1 1 1 1 1 1 1 1 1 1 ...
+##  $ Year        : int  1982 1982 1982 1982 1982 1982 1982 1982 1982 1982 ...
+##  $ Estacion    : int  11024 11024 11024 11024 11024 11024 11024 11024 11024 11024 ...
+##  $ lon         : num  -101 -101 -101 -101 -101 ...
+##  $ lat         : num  21 21 21 21 21 ...
+##  $ Elevacion   : int  1999 1999 1999 1999 1999 1999 1999 1999 1999 1999 ...
+##  $ Clima       : chr  &quot;Templado&quot; &quot;Templado&quot; &quot;Templado&quot; &quot;Templado&quot; ...
+##  $ Pcp_Estacion: chr  &quot;0&quot; &quot;0&quot; &quot;0&quot; &quot;0&quot; ...
+##  $ Pcp_Chirps  : num  0 0 0 0 0 0 0 0 0 0 ...</code></pre>
+<p>Como se puede observar la columna de <em>Fecha</em> es de tipo <em>character</em>, cuando debería ser tipo <em>date</em>, <em>Estación</em> es de tipo <em>integer</em>, cuando debería ser un <em>Factor</em> y <em>Clima</em> y <em>Pcp_Estacion</em>, son <em>character</em>, cuando la primera es un <em>Factor</em> y la segunda es de tipo <em>integer</em>. Para cambiar las variables usaremos el siguiente código</p>
+<pre class="r"><code>pcp$Fecha &lt;- as.Date(pcp$Fecha, &quot;%m/%d/%Y&quot;);
+pcp$Dia &lt;- as.numeric(pcp$Dia, &quot;%d&quot;);
+pcp$Mes &lt;- as.numeric(pcp$Mes, &quot;%m&quot;);
+pcp$Year &lt;- as.numeric(pcp$Year, &quot;%Y&quot;);
+pcp$Estacion &lt;- as.factor(pcp$Estacion);
+pcp$Clima &lt;- as.factor(pcp$Clima);
+# pcp[pcp$Pcp_Estacion == &quot;N/A&quot;] &lt;- NA
+pcp$Pcp_Estacion &lt;- as.numeric(pcp$Pcp_Estacion)</code></pre>
+<pre><code>## Warning: NAs introduced by coercion</code></pre>
+<p>Revisamos nuevamente con el comando de <code>str()</code></p>
+<pre class="r"><code>str(pcp);</code></pre>
+<pre><code>## &#39;data.frame&#39;:    62090 obs. of  12 variables:
+##  $ Id          : int  1 2 3 4 5 6 7 8 9 10 ...
+##  $ Fecha       : Date, format: &quot;1982-01-01&quot; &quot;1982-01-02&quot; ...
+##  $ Dia         : num  1 2 3 4 5 6 7 8 9 10 ...
+##  $ Mes         : num  1 1 1 1 1 1 1 1 1 1 ...
+##  $ Year        : num  1982 1982 1982 1982 1982 ...
+##  $ Estacion    : Factor w/ 5 levels &quot;11024&quot;,&quot;11033&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ lon         : num  -101 -101 -101 -101 -101 ...
+##  $ lat         : num  21 21 21 21 21 ...
+##  $ Elevacion   : int  1999 1999 1999 1999 1999 1999 1999 1999 1999 1999 ...
+##  $ Clima       : Factor w/ 1 level &quot;Templado&quot;: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ Pcp_Estacion: num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ Pcp_Chirps  : num  0 0 0 0 0 0 0 0 0 0 ...</code></pre>
+<p>El siguiente paso es visualizar las primeras 10 observaciones de nuestro <em>data frame</em></p>
+<pre class="r"><code>head(pcp, 10);</code></pre>
+<pre><code>##    Id      Fecha Dia Mes Year Estacion      lon    lat Elevacion    Clima
+## 1   1 1982-01-01   1   1 1982    11024 -101.266 21.015      1999 Templado
+## 2   2 1982-01-02   2   1 1982    11024 -101.266 21.015      1999 Templado
+## 3   3 1982-01-03   3   1 1982    11024 -101.266 21.015      1999 Templado
+## 4   4 1982-01-04   4   1 1982    11024 -101.266 21.015      1999 Templado
+## 5   5 1982-01-05   5   1 1982    11024 -101.266 21.015      1999 Templado
+## 6   6 1982-01-06   6   1 1982    11024 -101.266 21.015      1999 Templado
+## 7   7 1982-01-07   7   1 1982    11024 -101.266 21.015      1999 Templado
+## 8   8 1982-01-08   8   1 1982    11024 -101.266 21.015      1999 Templado
+## 9   9 1982-01-09   9   1 1982    11024 -101.266 21.015      1999 Templado
+## 10 10 1982-01-10  10   1 1982    11024 -101.266 21.015      1999 Templado
+##    Pcp_Estacion Pcp_Chirps
+## 1             0          0
+## 2             0          0
+## 3             0          0
+## 4             0          0
+## 5             0          0
+## 6             0          0
+## 7             0          0
+## 8             0          0
+## 9             0          0
+## 10            0          0</code></pre>
+<p>Ahora revisemos un reumen general de la variable de <em>pcp</em>, con la función de <code>summry()</code></p>
+<pre class="r"><code>summary(pcp);</code></pre>
+<pre><code>##        Id            Fecha                 Dia             Mes        
+##  Min.   :    1   Min.   :1982-01-01   Min.   : 1.00   Min.   : 1.000  
+##  1st Qu.:15523   1st Qu.:1990-07-02   1st Qu.: 8.00   1st Qu.: 4.000  
+##  Median :31046   Median :1998-12-31   Median :16.00   Median : 7.000  
+##  Mean   :31046   Mean   :1998-12-31   Mean   :15.73   Mean   : 6.523  
+##  3rd Qu.:46568   3rd Qu.:2007-07-02   3rd Qu.:23.00   3rd Qu.:10.000  
+##  Max.   :62090   Max.   :2015-12-31   Max.   :31.00   Max.   :12.000  
+##                                                                       
+##       Year       Estacion          lon              lat          Elevacion   
+##  Min.   :1982   11024:12418   Min.   :-101.3   Min.   :20.21   Min.   :1717  
+##  1st Qu.:1990   11033:12418   1st Qu.:-101.2   1st Qu.:20.57   1st Qu.:1753  
+##  Median :1998   11060:12418   Median :-101.2   Median :20.85   Median :1850  
+##  Mean   :1998   11096:12418   Mean   :-101.1   Mean   :20.76   Mean   :1959  
+##  3rd Qu.:2007   11141:12418   3rd Qu.:-100.9   3rd Qu.:21.02   3rd Qu.:1999  
+##  Max.   :2015                 Max.   :-100.8   Max.   :21.17   Max.   :2475  
+##                                                                              
+##       Clima        Pcp_Estacion       Pcp_Chirps   
+##  Templado:62090   Min.   :  0.000   Min.   : 0.00  
+##                   1st Qu.:  0.000   1st Qu.: 0.00  
+##                   Median :  0.000   Median : 0.00  
+##                   Mean   :  1.978   Mean   : 1.79  
+##                   3rd Qu.:  0.000   3rd Qu.: 0.00  
+##                   Max.   :111.800   Max.   :86.66  
+##                   NA&#39;s   :1113</code></pre>
+</div>
+</div>
+<div id="test-de-normalidad" class="section level1" number="2">
+<h1 number="2"><span class="header-section-number">2</span> Test de normalidad</h1>
+<p>Determinar si la distribución de la precipitación medida por las estaciones meteorológicas y por las imágenes CHIRPS corresponde a la distribución normal</p>
+<pre><code> - n de los datos = 2,638
+ - nivel de significancia = 0.5
+ - Hipotesis nula Ho: Se ajusta a una distribución normal
+ - Hipótesis alternativa H1: No se justa a una distribución normal</code></pre>
+<p><strong>Rechazamos la hipótesis nula si p-value es menor a 0.5</strong></p>
+<p><strong>No rechazamos la hipótesis nula si p-value es mayor a 0.5</strong></p>
+<pre class="r"><code>ggplot(data = subset(pcp, !is.na(Pcp_Estacion)),aes(x = Pcp_Estacion)) + 
+  geom_histogram(alpha = 0.5, position = &quot;identity&quot;)</code></pre>
+<p><img src="MR_IRN614_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(data = subset(pcp, !is.na(Pcp_Estacion)), aes(x = Pcp_Estacion, y = Estacion, na.omit = TRUE)) +
+  geom_density_ridges()</code></pre>
+<pre><code>## Picking joint bandwidth of 0.754</code></pre>
+<p><img src="MR_IRN614_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>Aplicamos Kolmogorov S. ya que nuestra base de datos cuenta con más de 50 observaciones</p>
+<pre class="r"><code>lillie.test(pcp$Pcp_Estacion)</code></pre>
+<pre><code>## 
+##  Lilliefors (Kolmogorov-Smirnov) normality test
+## 
+## data:  pcp$Pcp_Estacion
+## D = 0.40676, p-value &lt; 2.2e-16</code></pre>
+<p>En este caso el <strong>p-value es menor a 0.5</strong>, por lo que rechazamos la hipótesis nula, por lo que la distribución de la precipitación medida por las estaciones meteorológicas, no sigue una distribución normal.</p>
+<p>Aplicamos Kolmogorov S. ya que nuestra base de datos cuenta con más de 50 observaciones</p>
+<pre class="r"><code>lillie.test(pcp$Pcp_Chirps)</code></pre>
+<pre><code>## 
+##  Lilliefors (Kolmogorov-Smirnov) normality test
+## 
+## data:  pcp$Pcp_Chirps
+## D = 0.4286, p-value &lt; 2.2e-16</code></pre>
+<p>En este caso el <strong>p-value es menor a 0.5</strong>, por lo que rechazamos la hipótesis nula, por lo que la distribución de la precipitación medida por las imagenes CHIRPS, no sigue una distribución normal.</p>
+<pre class="r"><code>ggplot(data = pcp, aes(x = Pcp_Chirps, y = Estacion)) +
+  geom_density_ridges()</code></pre>
+<pre><code>## Picking joint bandwidth of 0.587</code></pre>
+<p><img src="MR_IRN614_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(pcp,aes(x = Pcp_Chirps)) + 
+  geom_histogram(alpha = 0.5, position = &quot;identity&quot;)</code></pre>
+<p><img src="MR_IRN614_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<pre class="r"><code>pcp_mensual &lt;- pcp  %&gt;% 
+                mutate(anio = format(Fecha, &quot;%Y&quot;),
+                        mes = format(Fecha, &quot;%B&quot;)) %&gt;% 
+                        group_by(anio,mes, Estacion) %&gt;% 
+                        get_summary_stats(Pcp_Estacion, type = &quot;mean&quot;)</code></pre>
+<pre class="r"><code>pcp_anual &lt;- pcp  %&gt;% 
+                mutate(anio = format(Fecha, &quot;%Y&quot;)) %&gt;% 
+                        group_by(anio, Estacion) %&gt;% 
+                        get_summary_stats(Pcp_Estacion, type = &quot;mean&quot;)</code></pre>
+<pre class="r"><code>pcp_anual$anio &lt;- as.factor(pcp_anual$anio)</code></pre>
+<pre class="r"><code>str(pcp_anual)</code></pre>
+<pre><code>## tibble [170 x 5] (S3: tbl_df/tbl/data.frame)
+##  $ Estacion: Factor w/ 5 levels &quot;11024&quot;,&quot;11033&quot;,..: 1 2 3 4 5 1 2 3 4 5 ...
+##  $ anio    : Factor w/ 34 levels &quot;1982&quot;,&quot;1983&quot;,..: 1 1 1 1 1 2 2 2 2 2 ...
+##  $ variable: chr [1:170] &quot;Pcp_Estacion&quot; &quot;Pcp_Estacion&quot; &quot;Pcp_Estacion&quot; &quot;Pcp_Estacion&quot; ...
+##  $ n       : num [1:170] 364 365 154 123 365 364 334 181 212 365 ...
+##  $ mean    : num [1:170] 1.596 0.879 2.474 2.772 1.333 ...</code></pre>
+<pre class="r"><code>pcp_mensual_estaciones &lt;- pcp_mensual %&gt;% 
+  mutate(meses = as.factor(pcp_mensual$mes)) </code></pre>
+<pre class="r"><code>pcp_mensual_estaciones$meses &lt;- factor(pcp_mensual_estaciones$meses, 
+                levels = c(&quot;April&quot;, &quot;August&quot;, &quot;December&quot;, &quot;February&quot;, &quot;January&quot;,
+                           &quot;July&quot;, &quot;June&quot;, &quot;March&quot;, &quot;May&quot;, &quot;November&quot;,
+                           &quot;October&quot;, &quot;September&quot;),
+                labels = c(&quot;Abril&quot;, &quot;Agosto&quot;, &quot;Diciembre&quot;, &quot;Febrero&quot;, &quot;Enero&quot;,
+                           &quot;Julio&quot;, &quot;Junio&quot;, &quot;Marzo&quot;, &quot;Mayo&quot;, &quot;Noviembre&quot;,
+                           &quot;Octubre&quot;, &quot;Septimebre&quot;))</code></pre>
+<pre class="r"><code>summary(pcp_mensual_estaciones$meses)</code></pre>
+<pre><code>##      Abril     Agosto  Diciembre    Febrero      Enero      Julio      Junio 
+##        168        168        167        166        168        167        167 
+##      Marzo       Mayo  Noviembre    Octubre Septimebre 
+##        168        168        165        166        168</code></pre>
+<pre class="r"><code>pcp_mensual_estaciones$meses &lt;- factor(pcp_mensual_estaciones$meses, 
+                levels = c(&quot;Enero&quot;, &quot;Febrero&quot;, &quot;Marzo&quot;, &quot;Abril&quot;, &quot;Mayo&quot;,&quot;Junio&quot;,
+                           &quot;Julio&quot;, &quot;Agosto&quot;, &quot;Septimebre&quot;, &quot;Octubre&quot;, &quot;Noviembre&quot;,
+                           &quot;Diciembre&quot;))</code></pre>
+<pre class="r"><code>summary(pcp_anual)</code></pre>
+<pre><code>##   Estacion       anio       variable               n              mean      
+##  11024:34   1982   :  5   Length:170         Min.   :123.0   Min.   :0.608  
+##  11033:34   1983   :  5   Class :character   1st Qu.:365.0   1st Qu.:1.562  
+##  11060:34   1984   :  5   Mode  :character   Median :365.0   Median :1.887  
+##  11096:34   1985   :  5                      Mean   :358.7   Mean   :1.978  
+##  11141:34   1986   :  5                      3rd Qu.:365.0   3rd Qu.:2.329  
+##             1987   :  5                      Max.   :366.0   Max.   :4.812  
+##             (Other):140</code></pre>
+<p>“Enero” “Febrero” “Marzo” “Abril” “Mayo” “Junio” “Julio” “Agosto” “Septimebre” “Octubre” “Noviembre” “Diciembre”</p>
+<pre class="r"><code>lillie.test(pcp_mensual$mean)</code></pre>
+<pre><code>## 
+##  Lilliefors (Kolmogorov-Smirnov) normality test
+## 
+## data:  pcp_mensual$mean
+## D = 0.2214, p-value &lt; 2.2e-16</code></pre>
+<pre class="r"><code>ggplot(data = pcp_mensual, aes(x = mean)) +
+  geom_histogram(alpha = 0.5, position = &quot;identity&quot;)</code></pre>
+<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="MR_IRN614_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(data = pcp_mensual_estaciones, aes(x = mean, y = meses)) +
+  geom_density_ridges()</code></pre>
+<pre><code>## Picking joint bandwidth of 0.389</code></pre>
+<p><img src="MR_IRN614_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
 </div>
 
 

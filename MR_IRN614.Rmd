@@ -34,7 +34,8 @@ El procedimiento ANOVA de medidas repetidas analiza grupos de variables dependie
 
 ## Instalar las librerías necesarias
 
-Como primer paso se vana a instalar todas las librerías necesarias para este trabaja, para esto vamos a empler la función de `library()`
+Como primer paso se van a instalar todas las librerías necesarias para este 
+trabajo, para esto vamos a emplear la función de `library()`
 ```{r, warning=FALSE, message = FALSE}
 library(tseries);
 library(astsa);
@@ -59,15 +60,250 @@ library(ggplot2);
 library(ggpubr);
 library(Metrics);
 library(RUnit);
-library(corrplot)
+library(corrplot);
+library(DT)
+library(kableExtra)
+library(nortest)
+library(ggridges)
 ```
 
 
 
+## Importar los datos
 
 
-Leer los datos de entrada, esto mendiante la función de `read.csv()`
+Leer los datos de entrada, esto mediante la función de `read.csv()`, y guardarlos
+en la varible de **pcp**
 ```{r}
 pcp <- read.csv("Bases_Datos/Precipitacion.csv")
 ```
 
+
+
+Revisar el tipo de variable que es **pcp**, mediante la función de `class()`
+```{r}
+class(pcp);
+```
+
+
+Como se puede observar la variable de **pcp** es un *data frame*.Revisar el tamaño del *data frame*, con la función `dim()`
+```{r}
+dim(pcp);
+```
+
+
+Se puede observar este *data frame* cuenta con **62,090** observaciones y **12** variables, las cuales tienen los siguientes nombres
+```{r}
+names(pcp);
+```
+
+
+A su vez cada variable o columna cuenta con un tipo de formato distinto el cual podemos revisar mediante el comando de `str()`
+```{r}
+str(pcp);
+```
+
+
+Como se puede observar la columna de *Fecha* es de tipo *character*, cuando debería ser tipo *date*, *Estación* es de tipo *integer*, cuando debería ser un *Factor* y *Clima* y *Pcp_Estacion*, son *character*, cuando la primera es un *Factor* y la segunda es de tipo *integer*. Para cambiar las variables usaremos el siguiente código
+```{r}
+pcp$Fecha <- as.Date(pcp$Fecha, "%m/%d/%Y");
+pcp$Dia <- as.numeric(pcp$Dia, "%d");
+pcp$Mes <- as.numeric(pcp$Mes, "%m");
+pcp$Year <- as.numeric(pcp$Year, "%Y");
+pcp$Estacion <- as.factor(pcp$Estacion);
+pcp$Clima <- as.factor(pcp$Clima);
+# pcp[pcp$Pcp_Estacion == "N/A"] <- NA
+pcp$Pcp_Estacion <- as.numeric(pcp$Pcp_Estacion)
+```
+
+
+Revisamos nuevamente con el comando de `str()`
+```{r}
+str(pcp);
+```
+
+
+El siguiente paso es visualizar las primeras 10 observaciones de nuestro *data frame*
+```{r}
+head(pcp, 10);
+```
+
+
+
+Ahora revisemos un reumen general de la variable de *pcp*, con la función de `summry()`
+```{r}
+summary(pcp);
+```
+
+
+# Test de normalidad
+
+
+Determinar si la distribución de la precipitación medida por las estaciones meteorológicas y por las imágenes CHIRPS corresponde a la distribución normal
+
+
+     - n de los datos = 2,638
+     - nivel de significancia = 0.5
+     - Hipotesis nula Ho: Se ajusta a una distribución normal
+     - Hipótesis alternativa H1: No se justa a una distribución normal
+
+
+**Rechazamos la hipótesis nula si p-value es menor a 0.5**
+
+**No rechazamos la hipótesis nula si p-value es mayor a 0.5**
+
+
+
+```{r, warning=FALSE, message = FALSE}
+ggplot(data = subset(pcp, !is.na(Pcp_Estacion)),aes(x = Pcp_Estacion)) + 
+  geom_histogram(alpha = 0.5, position = "identity")
+```
+
+
+
+```{r}
+ggplot(data = subset(pcp, !is.na(Pcp_Estacion)), aes(x = Pcp_Estacion, y = Estacion, na.omit = TRUE)) +
+  geom_density_ridges()
+```
+
+
+Aplicamos Kolmogorov S. ya que nuestra base de datos cuenta con más de 50 observaciones
+
+```{r}
+lillie.test(pcp$Pcp_Estacion)
+```
+
+En este caso el **p-value es menor a 0.5**, por lo que rechazamos la hipótesis nula, por lo que la distribución de la precipitación medida por las estaciones meteorológicas, no sigue una distribución normal.
+
+
+
+Aplicamos Kolmogorov S. ya que nuestra base de datos cuenta con más de 50 observaciones
+
+```{r}
+lillie.test(pcp$Pcp_Chirps)
+```
+
+En este caso el **p-value es menor a 0.5**, por lo que rechazamos la hipótesis nula, por lo que la distribución de la precipitación medida por las imagenes CHIRPS, no sigue una distribución normal.
+
+
+
+```{r}
+ggplot(data = pcp, aes(x = Pcp_Chirps, y = Estacion)) +
+  geom_density_ridges()
+```
+
+
+```{r, warning=FALSE, message = FALSE}
+ggplot(pcp,aes(x = Pcp_Chirps)) + 
+  geom_histogram(alpha = 0.5, position = "identity")
+```
+
+
+
+
+
+```{r}
+pcp_mensual <- pcp  %>% 
+                mutate(anio = format(Fecha, "%Y"),
+                        mes = format(Fecha, "%B")) %>% 
+                        group_by(anio,mes, Estacion) %>% 
+                        get_summary_stats(Pcp_Estacion, type = "mean")
+```
+
+
+
+```{r}
+pcp_anual <- pcp  %>% 
+                mutate(anio = format(Fecha, "%Y")) %>% 
+                        group_by(anio, Estacion) %>% 
+                        get_summary_stats(Pcp_Estacion, type = "mean")
+```
+
+
+```{r}
+pcp_anual$anio <- as.factor(pcp_anual$anio)
+```
+
+
+```{r}
+str(pcp_anual)
+```
+
+
+```{r}
+pcp_mensual_estaciones <- pcp_mensual %>% 
+  mutate(meses = as.factor(pcp_mensual$mes)) 
+  
+```
+
+
+```{r}
+pcp_mensual_estaciones$meses <- factor(pcp_mensual_estaciones$meses, 
+                levels = c("April", "August", "December", "February", "January",
+                           "July", "June", "March", "May", "November",
+                           "October", "September"),
+                labels = c("Abril", "Agosto", "Diciembre", "Febrero", "Enero",
+                           "Julio", "Junio", "Marzo", "Mayo", "Noviembre",
+                           "Octubre", "Septimebre"))
+```
+
+
+
+
+```{r}
+summary(pcp_mensual_estaciones$meses)
+```
+
+
+```{r}
+pcp_mensual_estaciones$meses <- factor(pcp_mensual_estaciones$meses, 
+                levels = c("Enero", "Febrero", "Marzo", "Abril", "Mayo","Junio",
+                           "Julio", "Agosto", "Septimebre", "Octubre", "Noviembre",
+                           "Diciembre"))
+
+```
+
+
+
+
+```{r}
+summary(pcp_anual)
+```
+
+
+"Enero"
+"Febrero"
+"Marzo"
+"Abril"
+"Mayo"
+"Junio"
+"Julio"
+"Agosto"
+"Septimebre"
+"Octubre"
+"Noviembre"
+"Diciembre"
+
+
+
+
+
+```{r}
+lillie.test(pcp_mensual$mean)
+```
+
+
+```{r}
+ggplot(data = pcp_mensual, aes(x = mean)) +
+  geom_histogram(alpha = 0.5, position = "identity")
+```
+
+
+```{r}
+ggplot(data = pcp_mensual_estaciones, aes(x = mean, y = meses)) +
+  geom_density_ridges()
+```
+
+
+
+http://betaeconomia.blogspot.com/2020/12/trabajar-datos-diarios-agrupados-por.html
